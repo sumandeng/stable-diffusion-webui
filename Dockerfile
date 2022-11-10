@@ -4,11 +4,15 @@ SHELL ["/bin/sh", "-ceuxo", "pipefail"]
 
 RUN apk add parallel aria2
 
-RUN mkdir -p /data/StableDiffusion \
+RUN mkdir -vp /data/.cache /data/StableDiffusion /data/Codeformer /data/GFPGAN /data/ESRGAN /data/BSRGAN /data/RealESRGAN /data/SwinIR /data/LDSR /data/ScuNET /data/embeddings /data/VAE /data/Deepdanbooru \
     && aria2c "https://drive.yerf.org/wl/?id=EBfTrmcCCUAGaQBXVIj5lJmEhjoP1tgl&mode=grid&download=1" \
-      --continue --dir /data/StableDiffusion --out model.ckpt
+      --continue --dir /data --out StableDiffusionmodel.ckpt \
+    && aria2c 'https://huggingface.co/stabilityai/sd-vae-ft-mse-original/resolve/main/vae-ft-mse-840000-ema-pruned.ckpt' \
+      --continue --dir /data --out VAE/vae-ft-mse-840000-ema-pruned.ckpt \
+    && aria2c 'https://github.com/AbdBarho/stable-diffusion-webui-docker/releases/download/2.1.0/xformers-0.0.14.dev0-cp310-cp310-linux_x86_64.whl' \
+      --continue --dir / --out wheel.whl
 
-RUN echo 'git clone --depth=1 "$2" repositories/"$1" && rm -rf .git' > /clone.sh
+RUN echo 'mkdir -p repositories/"$1" && cd repositories/"$1" && git clone --depth=1 "$2" . && rm -rf .git' > /clone.sh
 
 RUN . /clone.sh taming-transformers https://github.com/CompVis/taming-transformers.git 24268930bf1dce879235a7fddd0b2355b84d7ea6 \
   && rm -rf data assets **/*.ipynb
@@ -31,6 +35,7 @@ FROM pytorch/pytorch:1.11.0-cuda11.3-cudnn8-runtime
 SHELL ["/bin/bash", "-ceuxo", "pipefail"]
 ENV DEBIAN_FRONTEND=noninteractive PIP_PREFER_BINARY=1 PIP_NO_CACHE_DIR=1
 
+
 ENV PROJECT_NAME=stable-diffusion
 ENV APP_DIR=/${PROJECT_NAME}
 WORKDIR ${APP_DIR}
@@ -39,15 +44,20 @@ COPY . ${APP_DIR}
 # copy dependency files
 COPY --from=download /git/ ${APP_DIR}
 COPY --from=download /data/StableDiffusion/model.ckpt ${APP_DIR}
+COPY --from=download /wheel.whl xformers-0.0.14.dev0-cp310-cp310-linux_x86_64.whl
 
-RUN apt update && apt install git -y
-RUN pip install torch --extra-index-url https://download.pytorch.org/whl/cu113 \
+
+RUN apt update && apt install fonts-dejavu-core rsync git jq moreutils -y && apt-get clean
+RUN pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/cu113 \
     && pip install transformers==4.19.2 diffusers invisible-watermark --prefer-binary \
     && pip install git+https://github.com/crowsonkb/k-diffusion.git --prefer-binary \
     && pip install git+https://github.com/TencentARC/GFPGAN.git --prefer-binary \
     && pip install -r repositories/CodeFormer/requirements.txt --prefer-binary \
     && pip install -r requirements.txt  --prefer-binary \
-    && pip install -U numpy  --prefer-binary
+    && pip install -U numpy  --prefer-binary \
+    && pip install xformers-0.0.14.dev0-cp310-cp310-linux_x86_64.whl \
+    && rm xformers-0.0.14.dev0-cp310-cp310-linux_x86_64.whl
+
 
 EXPOSE 8501
 CMD python3 webui.py --listen --port 8501
