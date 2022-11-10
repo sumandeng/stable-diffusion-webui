@@ -6,7 +6,7 @@ RUN apk add parallel aria2
 
 RUN mkdir -vp /data/.cache /data/StableDiffusion /data/Codeformer /data/GFPGAN /data/ESRGAN /data/BSRGAN /data/RealESRGAN /data/SwinIR /data/LDSR /data/ScuNET /data/embeddings /data/VAE /data/Deepdanbooru \
     && aria2c "https://drive.yerf.org/wl/?id=EBfTrmcCCUAGaQBXVIj5lJmEhjoP1tgl&mode=grid&download=1" \
-      --continue --dir /data --out StableDiffusionmodel.ckpt \
+      --continue --dir /data --out StableDiffusion/model.ckpt \
     && aria2c 'https://huggingface.co/stabilityai/sd-vae-ft-mse-original/resolve/main/vae-ft-mse-840000-ema-pruned.ckpt' \
       --continue --dir /data --out VAE/vae-ft-mse-840000-ema-pruned.ckpt \
     && aria2c 'https://github.com/AbdBarho/stable-diffusion-webui-docker/releases/download/2.1.0/xformers-0.0.14.dev0-cp310-cp310-linux_x86_64.whl' \
