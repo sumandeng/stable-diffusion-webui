@@ -6,7 +6,7 @@ RUN apk add parallel aria2
 
 RUN mkdir -p /data/StableDiffusion \
     && aria2c "https://drive.yerf.org/wl/?id=EBfTrmcCCUAGaQBXVIj5lJmEhjoP1tgl&mode=grid&download=1" \
-      --continue --out=/data/StableDiffusion/model.ckpt
+      --continue --out-dir=/data/StableDiffusion --out=model.ckpt
 
 RUN echo 'git clone --depth=1 "$2" repositories/"$1" && rm -rf .git' > /clone.sh
 
